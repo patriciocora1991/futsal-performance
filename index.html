@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futsal Performance Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --neon-green: #39FF14;
+            --neon-blue: #00f2ff;
+            --dark-bg: #050505;
+            --card-bg: #111;
+        }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        .neon-green-text { text-shadow: 0 0 5px var(--neon-green); color: var(--neon-green); }
+        .neon-blue-text { text-shadow: 0 0 5px var(--neon-blue); color: var(--neon-blue); }
+        
+        input, select {
+            background-color: #000 !important;
+            border: 1px solid #333 !important;
+            color: white !important;
+            padding: 4px 8px !important;
+            font-size: 13px;
+        }
+        input:focus { border-color: var(--neon-green) !important; outline: none; }
+        
+        .card { background-color: var(--card-bg); border: 1px solid #222; }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            opacity: 0.6;
+        }
+        .tab-btn.active {
+            opacity: 1;
+            border-bottom: 2px solid var(--neon-green);
+            background: rgba(57, 255, 20, 0.05);
+        }
+        .tab-btn.active.ssg {
+            border-bottom: 2px solid var(--neon-blue);
+            background: rgba(0, 242, 255, 0.05);
+        }
+        
+        .hidden { display: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="p-2 md:p-4">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- NAVEGACIÓN POR PESTAÑAS -->
+        <nav class="flex border-b border-zinc-800 mb-6 bg-zinc-900 rounded-t-lg overflow-hidden">
+            <div id="tab-intermitente" class="tab-btn active" onclick="switchTab('intermitente')">
+                🏃 Intermitente (VFA)
+            </div>
+            <div id="tab-ssg" class="tab-btn ssg" onclick="switchTab('ssg')">
+                ⚽ Juegos Reducidos (SSG)
+            </div>
+        </nav>
+
+        <!-- SECCIÓN 1: INTERMITENTE -->
+        <div id="content-intermitente" class="animate-in fade-in duration-500">
+            <header class="flex justify-between items-center mb-4 px-2">
+                <h1 class="text-xl font-bold neon-green-text uppercase tracking-tighter">VFA INTERMITENTE PRO</h1>
+                <div class="flex gap-4 items-center">
+                    <button onclick="toggleFutsalMode()" id="futsalBadge" class="text-[10px] border border-green-500 px-3 py-1 rounded uppercase font-bold text-green-500">Balón: OFF</button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-3 space-y-4">
+                    <!-- Eval -->
+                    <div class="card p-3 rounded shadow-xl">
+                        <h2 class="text-[11px] font-bold mb-2 uppercase text-white opacity-80 border-b border-zinc-800">Test / Eval</h2>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" id="evalDistancia" value="1000" class="col-span-2 w-full text-xs rounded" placeholder="Metros">
+                            <input type="number" id="evalMin" value="4" class="w-full text-xs rounded" placeholder="Min">
+                            <input type="number" id="evalSeg" value="0" class="w-full text-xs rounded" placeholder="Seg">
+                        </div>
+                        <button onclick="calcularVFA()" class="w-full py-1 text-[10px] font-bold uppercase mt-2 border border-green-500 hover:bg-green-500 hover:text-black transition">Set VFA</button>
+                        <p id="vfaValueDisplay" class="text-center mt-1 text-lg font-black hidden text-green-500">-- km/h</p>
+                    </div>
+                    <!-- Sesión -->
+                    <div class="card p-3 rounded shadow-xl">
+                        <h2 class="text-[11px] font-bold mb-2 uppercase text-white opacity-80 border-b border-zinc-800">Parámetros Sesión</h2>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] uppercase">Esfuerzo (s)</span>
+                                <input type="number" id="tEsfuerzo" value="10" class="w-16 text-xs text-right" oninput="renderIntermitente()">
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] uppercase">Pausa (s)</span>
+                                <input type="number" id="tPausa" value="10" class="w-16 text-xs text-right" oninput="renderIntermitente()">
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] uppercase">% VFA</span>
+                                <input type="number" id="intVfa" value="95" class="w-16 text-xs text-right" oninput="renderIntermitente()">
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-[10px] uppercase block mb-1">Modo</span>
+                                <select id="modoGiro" class="w-full text-[11px]" onchange="renderIntermitente()">
+                                    <option value="linear">Lineal</option>
+                                    <option value="idaVuelta">Ida y Vuelta (1 Giro)</option>
+                                    <option value="multidireccional">Multidireccional</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-9">
+                    <div class="card rounded flex flex-col h-full overflow-hidden shadow-2xl">
+                        <div class="p-3 bg-zinc-900 flex flex-wrap gap-2 items-center">
+                            <input type="text" id="nombreJugador" placeholder="Nombre/Grupo" class="flex-grow text-xs">
+                            <input type="number" id="vfaJugador" placeholder="VFA km/h" class="w-24 text-xs">
+                            <button onclick="agregarJugador()" class="bg-green-600 text-black px-4 py-1.5 text-[10px] font-bold uppercase hover:bg-green-400 transition">Añadir</button>
+                        </div>
+                        <div class="overflow-y-auto max-h-[500px]">
+                            <table class="w-full text-left">
+                                <thead class="bg-zinc-800 sticky top-0">
+                                    <tr>
+                                        <th class="p-2 text-[10px] text-zinc-400 uppercase tracking-widest">Nombre</th>
+                                        <th class="p-2 text-[10px] text-zinc-400 text-center uppercase tracking-widest">VFA</th>
+                                        <th class="p-2 text-[10px] text-zinc-400 text-center uppercase tracking-widest">Obj (m)</th>
+                                        <th class="p-2 text-[10px] text-zinc-400 text-center uppercase bg-zinc-700 text-white tracking-widest">Marca (m)</th>
+                                        <th class="p-2 text-[10px] text-zinc-400 text-center uppercase tracking-widest">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaJugadores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: SSG -->
+        <div id="content-ssg" class="hidden animate-in fade-in duration-500">
+            <header class="flex justify-between items-center mb-4 px-2">
+                <h1 class="text-xl font-bold neon-blue-text uppercase tracking-tighter">FUTSAL SSG OPTIMIZER</h1>
+                <div class="text-[10px] opacity-50 uppercase tracking-widest">Carga Específica de Fútbol Sala</div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="card p-4 rounded shadow-xl">
+                        <h2 class="text-xs font-bold mb-4 uppercase border-b border-zinc-800 pb-2">Espacio de Juego</h2>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-zinc-500 uppercase block mb-1">Largo (m)</label>
+                                <input type="number" id="ssgLargo" value="20" class="w-full rounded" oninput="calcularSSG()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-zinc-500 uppercase block mb-1">Ancho (m)</label>
+                                <input type="number" id="ssgAncho" value="20" class="w-full rounded" oninput="calcularSSG()">
+                            </div>
+                        </div>
+                        <div class="mt-4 p-2 bg-blue-900/20 border border-blue-900/30 rounded">
+                            <span class="text-[10px] text-blue-300 uppercase block">Superficie Total:</span>
+                            <span id="ssgAreaTotal" class="text-lg font-bold text-white">0 m²</span>
+                        </div>
+                        <p class="mt-3 text-[9px] text-zinc-600 uppercase italic">* Cancha reglamentaria: 40x20m (800m²)</p>
+                    </div>
+                    <div class="card p-4 rounded shadow-xl">
+                        <h2 class="text-xs font-bold mb-4 uppercase border-b border-zinc-800 pb-2">Participantes y Volumen</h2>
+                        <div class="space-y-3">
+                            <label class="text-[10px] text-zinc-500 uppercase block">Total Jugadores (Incl. Porteros)</label>
+                            <input type="number" id="ssgJugadores" value="8" class="w-full rounded" oninput="calcularSSG()">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 uppercase block">Series</label>
+                                    <input type="number" id="ssgSeries" value="4" class="w-full rounded" oninput="calcularSSG()">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 uppercase block">Min/Serie</label>
+                                    <input type="number" id="ssgMinutos" value="3" class="w-full rounded" oninput="calcularSSG()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="card p-4 rounded text-center border-blue-900 shadow-xl">
+                            <span class="text-[9px] text-zinc-500 uppercase block mb-1">m² / Jugador (Área Relativa)</span>
+                            <p id="ssgM2" class="text-3xl font-black text-white">0</p>
+                        </div>
+                        <div class="card p-4 rounded text-center border-blue-900 shadow-xl">
+                            <span class="text-[9px] text-zinc-500 uppercase block mb-1">Categoría Futsal</span>
+                            <p id="ssgRelacion" class="text-xs font-bold text-blue-400 mt-2 uppercase tracking-tighter">--</p>
+                        </div>
+                        <div class="card p-4 rounded text-center border-blue-900 shadow-xl">
+                            <span class="text-[9px] text-zinc-500 uppercase block mb-1">Tiempo Total</span>
+                            <p id="ssgCarga" class="text-3xl font-black text-white">0</p>
+                            <span class="text-[9px] text-zinc-500 uppercase">Minutos</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 rounded border-l-4 border-blue-500 shadow-2xl">
+                        <h3 class="text-white font-bold uppercase mb-2 text-sm flex justify-between">
+                            Diagnóstico Fisiológico Específico
+                            <span class="text-[9px] opacity-40">Ref: Barbero-Álvarez et al.</span>
+                        </h3>
+                        <div id="ssgDiagnostico" class="text-xs text-zinc-400 leading-relaxed space-y-3"></div>
+                    </div>
+
+                    <!-- REFERENCIA VISUAL FUTSAL -->
+                    <div class="grid grid-cols-3 gap-2 opacity-60">
+                        <div class="p-2 border border-zinc-800 rounded text-[9px]">
+                            <p class="font-bold text-white uppercase">REDUCIDO (< 35m²/J)</p>
+                            <p>Demanda de Fuerza, aceleraciones cortas, contactos.</p>
+                        </div>
+                        <div class="p-2 border border-zinc-800 rounded text-[9px]">
+                            <p class="font-bold text-white uppercase">ESPECÍFICO (35-65m²/J)</p>
+                            <p>Carga de partido, transiciones rápidas, táctica.</p>
+                        </div>
+                        <div class="p-2 border border-zinc-800 rounded text-[9px]">
+                            <p class="font-bold text-white uppercase">AMPLIO (> 65m²/J)</p>
+                            <p>Distancia alta velocidad, fatiga aeróbica.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CORE NAVIGATION ---
+        function switchTab(tab) {
+            document.getElementById('content-intermitente').classList.toggle('hidden', tab !== 'intermitente');
+            document.getElementById('content-ssg').classList.toggle('hidden', tab !== 'ssg');
+            
+            document.getElementById('tab-intermitente').classList.toggle('active', tab === 'intermitente');
+            document.getElementById('tab-ssg').classList.toggle('active', tab === 'ssg');
+            
+            if (tab === 'ssg') calcularSSG();
+            else renderIntermitente();
+        }
+
+        // --- INTERMITENTE LOGIC ---
+        let jugadores = JSON.parse(localStorage.getItem('futsal_vfa_v4')) || [
+            { id: 1, nombre: "Cuarteto Titular", vfa: 19.5 },
+            { id: 2, nombre: "Cuarteto Suplente", vfa: 18.0 }
+        ];
+        let modoFutsal = false;
+
+        function calcularVFA() {
+            const d = parseFloat(document.getElementById('evalDistancia').value);
+            const m = parseFloat(document.getElementById('evalMin').value) || 0;
+            const s = parseFloat(document.getElementById('evalSeg').value) || 0;
+            const t = (m * 60) + s;
+            if (t > 0) {
+                const v = (d / t) * 3.6;
+                document.getElementById('vfaValueDisplay').textContent = v.toFixed(1) + " km/h";
+                document.getElementById('vfaValueDisplay').classList.remove('hidden');
+                document.getElementById('vfaJugador').value = v.toFixed(1);
+            }
+        }
+
+        function agregarJugador() {
+            const n = document.getElementById('nombreJugador').value;
+            const v = parseFloat(document.getElementById('vfaJugador').value);
+            if (n && v) {
+                jugadores.push({ id: Date.now(), nombre: n, vfa: v });
+                saveAndRender();
+                document.getElementById('nombreJugador').value = '';
+                document.getElementById('vfaJugador').value = '';
+            }
+        }
+
+        function eliminarJugador(id) {
+            jugadores = jugadores.filter(j => j.id !== id);
+            saveAndRender();
+        }
+
+        function toggleFutsalMode() {
+            modoFutsal = !modoFutsal;
+            const b = document.getElementById('futsalBadge');
+            b.textContent = modoFutsal ? "Balón: ON" : "Balón: OFF";
+            b.style.backgroundColor = modoFutsal ? "var(--neon-green)" : "transparent";
+            b.style.color = modoFutsal ? "black" : "var(--neon-green)";
+            renderIntermitente();
+        }
+
+        function renderIntermitente() {
+            const container = document.getElementById('listaJugadores');
+            const tEsf = parseFloat(document.getElementById('tEsfuerzo').value) || 1;
+            const intv = (parseFloat(document.getElementById('intVfa').value) || 100) / 100;
+            const modo = document.getElementById('modoGiro').value;
+
+            container.innerHTML = '';
+            jugadores.forEach(j => {
+                let dist = (j.vfa / 3.6) * intv * tEsf;
+                if (modoFutsal) dist *= 0.88;
+
+                let factor = 1, divisor = 1;
+                if (modo === 'idaVuelta') { factor = 0.95; divisor = 2; }
+                else if (modo === 'multidireccional') { factor = 0.82; divisor = 4; }
+
+                const final = dist * factor;
+                const marca = final / divisor;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-zinc-900 text-xs hover:bg-zinc-800 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold">${j.nombre}</td>
+                    <td class="p-3 text-center opacity-50 font-mono">${j.vfa.toFixed(1)}</td>
+                    <td class="p-3 text-center text-zinc-400">${final.toFixed(1)}m</td>
+                    <td class="p-3 text-center bg-zinc-800 bg-opacity-40 text-green-400 font-black text-sm border-l border-zinc-700">${marca.toFixed(1)}m</td>
+                    <td class="p-3 text-center">
+                        <button onclick="eliminarJugador(${id=j.id})" class="text-red-900 hover:text-red-500 transition">✕</button>
+                    </td>
+                `;
+                container.appendChild(tr);
+            });
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('futsal_vfa_v4', JSON.stringify(jugadores));
+            renderIntermitente();
+        }
+
+        // --- SSG LOGIC (FUTSAL SPECIFIC) ---
+        function calcularSSG() {
+            const l = parseFloat(document.getElementById('ssgLargo').value) || 0;
+            const a = parseFloat(document.getElementById('ssgAncho').value) || 0;
+            const j = parseFloat(document.getElementById('ssgJugadores').value) || 1;
+            const s = parseFloat(document.getElementById('ssgSeries').value) || 0;
+            const m = parseFloat(document.getElementById('ssgMinutos').value) || 0;
+
+            const areaTotal = l * a;
+            const m2 = areaTotal / j;
+            
+            document.getElementById('ssgAreaTotal').textContent = areaTotal + " m²";
+            document.getElementById('ssgM2').textContent = m2.toFixed(1);
+            document.getElementById('ssgCarga').textContent = s * m;
+
+            const diag = document.getElementById('ssgDiagnostico');
+            const rel = document.getElementById('ssgRelacion');
+
+            if (m2 < 35) {
+                rel.textContent = "Espacio Reducido (Fuerza)";
+                diag.innerHTML = `
+                    <p><span class="text-blue-400 font-bold uppercase tracking-widest">Enfoque:</span> Carga Neuromuscular Explosiva.</p>
+                    <p>Alta frecuencia de aceleraciones y frenados (fuerza excéntrica). Muy frecuente en situaciones de 2x2 o 3x3 en media cancha. Máxima frecuencia de contactos con balón.</p>
+                    <p class="mt-2 italic text-[10px] text-zinc-500">Uso: Desarrollo de la potencia de salida y duelos 1v1/2v2.</p>
+                `;
+            } else if (m2 <= 65) {
+                rel.textContent = "Espacio Específico (Carga Partido)";
+                diag.innerHTML = `
+                    <p><span class="text-blue-400 font-bold uppercase tracking-widest">Enfoque:</span> Potencia Metabólica / Resistencia Intermitente.</p>
+                    <p>Similar a la densidad de un partido de futsal reglamentario (4v4 o 5v5 en 40x20m). Fomenta transiciones defensa-ataque y mantenimiento de alta intensidad cardiovascular (>85% FC Máx).</p>
+                    <p class="mt-2 italic text-[10px] text-zinc-500">Uso: Táctica colectiva a ritmo de competición.</p>
+                `;
+            } else {
+                rel.textContent = "Espacio Amplio (Aeróbico/Velocidad)";
+                diag.innerHTML = `
+                    <p><span class="text-blue-400 font-bold uppercase tracking-widest">Enfoque:</span> Resistencia Aeróbica y Alta Velocidad.</p>
+                    <p>Espacios superiores a lo habitual (ej. 3x3 en cancha completa). Obliga a realizar desplazamientos largos, aumentando la distancia total recorrida y la velocidad punta.</p>
+                    <p class="mt-2 italic text-[10px] text-zinc-500">Uso: Compensación de carga aeróbica y situaciones de contraataque largo.</p>
+                `;
+            }
+        }
+
+        window.onload = () => {
+            renderIntermitente();
+            calcularSSG();
+        };
+    </script>
+</body>
+</html>
